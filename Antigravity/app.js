@@ -460,7 +460,7 @@ class BioPulseApp {
     }, 1000);
   }
 
-  /* ==========================================================================
+ /* ==========================================================================
      SIMULATED BIOMETRIC FINGERPRINT SCAN
      ========================================================================== */
   handleSimulatedScan(targetStudent = null) {
@@ -478,6 +478,9 @@ class BioPulseApp {
 
       this.attendanceDB[this.selectedDate][student.id][period] = 'P';
       this.saveAttendanceToStorage();
+
+      // 🚀 NEW: Send this successful scan directly to your Neon PostgreSQL Database!
+      saveAttendanceToDatabase(student.name, student.roll);
 
       // Play Audio Feedback
       this.playBeep('success');
@@ -972,3 +975,34 @@ let app;
 document.addEventListener('DOMContentLoaded', () => {
   app = new BioPulseApp();
 });
+// Function to send student data to our new Vercel API
+async function saveAttendanceToDatabase(studentName, rollNumber) {
+    try {
+        const response = await fetch('/api/addStudent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                name: studentName, 
+                roll_number: rollNumber 
+            }),
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log("Success:", data.message);
+            alert(`${studentName} has been marked present in the database!`);
+        } else {
+            console.error("Error from server:", data.message);
+            alert("Could not save attendance. Check console.");
+        }
+    } catch (error) {
+        console.error("Network error:", error);
+        alert("Failed to reach the database API.");
+    }
+}
+
+// Example of how to use it (you would link this to your button click):
+// saveAttendanceToDatabase("Rahul Sharma", "CS-101");
