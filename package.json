@@ -1,0 +1,7 @@
+{
+  "name": "biopulse-backend",
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "latest"
+  }
+}
