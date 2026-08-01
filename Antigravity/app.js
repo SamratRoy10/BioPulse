@@ -11,33 +11,50 @@ class BioPulseApp {
     this.selectedMonth = '2026-07';
     this.audioEnabled = true;
     
-    // Students Initial Seed Data (Teacher can add more)
-    this.students = this.loadStudentsFromStorage() || [];
-    // Attendance DB: date -> studentId -> { 1:'P', 2:'P', ..., 8:'A' }
+    // Students Initial Seed Data (Will be overridden by live database fetch)
+    this.students = [];
     this.attendanceDB = this.loadAttendanceFromStorage() || this.generateSeedAttendance();
 
     this.initAudioContext();
     this.initDOM();
     this.initCanvasScanner();
     this.bindEvents();
-    this.renderAll();
+    
+    // 🚀 Fetch live students from Neon Database on startup
+    this.loadStudentsFromDatabase();
+
     this.startClock();
   }
 
   /* ==========================================================================
-     LOCAL STORAGE STATE MANAGEMENT
+     FETCH LIVE STUDENTS FROM DATABASE
      ========================================================================== */
-  loadStudentsFromStorage() {
+  async loadStudentsFromDatabase() {
     try {
-      const data = localStorage.getItem('biopulse_students');
-      return data ? JSON.parse(data) : null;
-    } catch (e) { return null; }
-  }
-
-  saveStudentsToStorage() {
-    try {
-      localStorage.setItem('biopulse_students', JSON.stringify(this.students));
-    } catch (e) {}
+      const response = await fetch('/api/getStudents');
+      const dbStudents = await response.json();
+      
+      if (Array.isArray(dbStudents) && dbStudents.length > 0) {
+        this.students = dbStudents.map((s, index) => ({
+          id: 'STD' + String(index + 1).padStart(3, '0'),
+          name: s.name,
+          roll: s.roll_number,
+          dept: 'Computer Science',
+          section: 'Sec-A',
+          batch: '2024-2028',
+          fingerprintId: s.id,
+          photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+          phone: '+91 9800000000'
+        }));
+      } else {
+        this.students = [];
+      }
+      this.renderAll();
+    } catch (error) {
+      console.error("Failed to load live students:", error);
+      this.students = [];
+      this.renderAll();
+    }
   }
 
   loadAttendanceFromStorage() {
