@@ -412,7 +412,7 @@ class BioPulseApp {
       });
     }
 
-    if (form) {
+  if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -424,33 +424,11 @@ class BioPulseApp {
         const fpId = parseInt(document.getElementById('input-fingerprint-id').value);
         const phone = document.getElementById('input-guardian-phone').value.trim() || '+91 9800000000';
 
-        const newStudent = {
-          id: 'STD' + String(this.students.length + 1).padStart(3, '0'),
-          name: name,
-          roll: roll,
-          dept: dept,
-          section: section,
-          batch: batch,
-          fingerprintId: fpId,
-          photo: currentPhotoBase64,
-          phone: phone
-        };
-
-        this.students.push(newStudent);
-        this.saveStudentsToStorage();
-
-        // Initialize student attendance for today
-        if (!this.attendanceDB[this.selectedDate]) this.attendanceDB[this.selectedDate] = {};
-        const p = {};
-        for (let i = 1; i <= 8; i++) p[i] = 'A';
-        this.attendanceDB[this.selectedDate][newStudent.id] = p;
-        this.saveAttendanceToStorage();
+        // 🚀 Save straight to your Neon database via API
+        this.saveNewStudentToDatabase(name, roll, dept, section, batch, fpId, phone, currentPhotoBase64);
 
         form.reset();
         photoPreview.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
-
-        alert(`✅ Student ${name} (Roll: ${roll}) registered successfully with Biometric ID #${fpId}!`);
-        this.renderAll();
       });
     }
   }
@@ -1020,6 +998,26 @@ async function saveAttendanceToDatabase(studentName, rollNumber) {
         alert("Failed to reach the database API.");
     }
 }
+async saveNewStudentToDatabase(name, roll, dept, section, batch, fpId, phone, photo) {
+    try {
+      const response = await fetch('/api/addStudent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, roll_number: roll })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert(`✅ Student ${name} (Roll: ${roll}) registered successfully in the database!`);
+        this.loadStudentsFromDatabase(); // Refresh the list live from Neon
+      } else {
+        alert("Could not save student to database. Check console.");
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Failed to reach the database API.");
+    }
+  }
 
 // Example of how to use it (you would link this to your button click):
 // saveAttendanceToDatabase("Rahul Sharma", "CS-101");
