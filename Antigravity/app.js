@@ -57,6 +57,27 @@ class BioPulseApp {
     }
   }
 
+  async saveNewStudentToDatabase(name, roll, dept, section, batch, fpId, phone, photo) {
+    try {
+      const response = await fetch('/api/addStudent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, roll_number: roll })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert(`✅ Student ${name} (Roll: ${roll}) registered successfully in the database!`);
+        this.loadStudentsFromDatabase(); // Refresh the list live from Neon
+      } else {
+        alert("Could not save student to database. Check console.");
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Failed to reach the database API.");
+    }
+  }
+
   loadAttendanceFromStorage() {
     try {
       const data = localStorage.getItem('biopulse_attendance_db');
@@ -73,9 +94,8 @@ class BioPulseApp {
   /* Generate 8-period attendance data for today and previous days */
   generateSeedAttendance() {
     const db = {};
-    const todayStr = this.selectedDate; // e.g. 2026-07-30
+    const todayStr = this.selectedDate;
     
-    // Generate dates for July 24 to July 30
     const dates = [];
     for (let d = 24; d <= 30; d++) {
       dates.push(`2026-07-${d < 10 ? '0' + d : d}`);
@@ -86,15 +106,12 @@ class BioPulseApp {
       this.students.forEach((std, idx) => {
         const pState = {};
         
-        // STD003 (Vikramaditya): Absent for 3 consecutive days (July 28, 29, 30)
         if (std.id === 'STD003' && (dateStr === '2026-07-28' || dateStr === '2026-07-29' || dateStr === '2026-07-30')) {
           for (let p = 1; p <= 8; p++) pState[p] = 'A';
         }
-        // STD005 (Rohan): Absent for 5 consecutive days (July 26, 27, 28, 29, 30)
         else if (std.id === 'STD005' && (dateStr >= '2026-07-26' && dateStr <= '2026-07-30')) {
           for (let p = 1; p <= 8; p++) pState[p] = 'A';
         } else {
-          // Random realistic attendance pattern for 8 periods
           for (let p = 1; p <= 8; p++) {
             const rand = Math.random();
             if (rand > 0.15) pState[p] = 'P';
@@ -135,16 +152,14 @@ class BioPulseApp {
     const now = this.audioCtx.currentTime;
 
     if (type === 'success') {
-      // High pitch double chime
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, now); // A5
-      osc.frequency.setValueAtTime(1318.5, now + 0.1); // E6
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.setValueAtTime(1318.5, now + 0.1);
       gain.gain.setValueAtTime(0.15, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
       osc.start(now);
       osc.stop(now + 0.35);
     } else if (type === 'error') {
-      // Low saw buzz
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(150, now);
       osc.frequency.setValueAtTime(110, now + 0.15);
@@ -175,14 +190,12 @@ class BioPulseApp {
     const centerX = w / 2;
     const centerY = h / 2;
 
-    // Outer Glow Ring
     ctx.beginPath();
     ctx.arc(centerX, centerY, 85 + Math.sin(pulse) * 3, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(0, 242, 254, 0.3)';
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw Ridges (Concentric ellipses)
     for (let r = 15; r <= 70; r += 7) {
       ctx.beginPath();
       ctx.ellipse(
@@ -199,9 +212,8 @@ class BioPulseApp {
       ctx.setLineDash([Math.random() * 20 + 10, Math.random() * 5 + 2]);
       ctx.stroke();
     }
-    ctx.setLineDash([]); // Reset line dash
+    ctx.setLineDash([]);
 
-    // Core Minutiae Points
     const minutiaePoints = [
       { x: centerX - 20, y: centerY - 30 },
       { x: centerX + 25, y: centerY - 15 },
@@ -225,6 +237,10 @@ class BioPulseApp {
 
   triggerScanAnimation(callback) {
     const wrapper = document.getElementById('fingerprint-trigger');
+    if (!wrapper) {
+      if (callback) callback();
+      return;
+    }
     wrapper.classList.add('scanning');
     
     let frame = 0;
@@ -245,13 +261,11 @@ class BioPulseApp {
      DOM & EVENT BINDINGS
      ========================================================================== */
   initDOM() {
-    // Set date picker defaults
     const datePicker = document.getElementById('daily-date-picker');
     if (datePicker) datePicker.value = this.selectedDate;
   }
 
   bindEvents() {
-    // Navigation Tabs
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
         const target = e.currentTarget.getAttribute('data-tab');
@@ -259,7 +273,6 @@ class BioPulseApp {
       });
     });
 
-    // Theme Toggle
     const themeBtn = document.getElementById('theme-toggle');
     if (themeBtn) {
       themeBtn.addEventListener('click', () => {
@@ -270,7 +283,6 @@ class BioPulseApp {
       });
     }
 
-    // Period Selector
     const periodSel = document.getElementById('period-selector');
     if (periodSel) {
       periodSel.addEventListener('change', (e) => {
@@ -280,7 +292,6 @@ class BioPulseApp {
       });
     }
 
-    // Fingerprint Scanner Click / Scan
     const fpTrigger = document.getElementById('fingerprint-trigger');
     if (fpTrigger) {
       fpTrigger.addEventListener('click', () => this.handleSimulatedScan());
@@ -300,7 +311,6 @@ class BioPulseApp {
       });
     }
 
-    // Sound Toggle Button
     const btnSound = document.getElementById('btn-toggle-sound');
     if (btnSound) {
       btnSound.addEventListener('click', () => {
@@ -311,13 +321,11 @@ class BioPulseApp {
       });
     }
 
-    // Date Picker Change in Daily Summary
     const datePicker = document.getElementById('daily-date-picker');
     if (datePicker) {
       datePicker.addEventListener('change', (e) => {
         this.selectedDate = e.target.value;
         if (!this.attendanceDB[this.selectedDate]) {
-          // Initialize date if new
           this.attendanceDB[this.selectedDate] = {};
           this.students.forEach(s => {
             const p = {};
@@ -331,23 +339,19 @@ class BioPulseApp {
       });
     }
 
-    // Filters for Daily Matrix
     const filterDept = document.getElementById('filter-dept');
     const searchDaily = document.getElementById('search-student-daily');
     if (filterDept) filterDept.addEventListener('change', () => this.renderDailyMatrix());
     if (searchDaily) searchDaily.addEventListener('input', () => this.renderDailyMatrix());
 
-    // Export CSV Handlers
     const btnExportDaily = document.getElementById('btn-export-daily-csv');
     if (btnExportDaily) btnExportDaily.addEventListener('click', () => this.exportDailyCSV());
 
     const btnExportMonthly = document.getElementById('btn-export-monthly-csv');
     if (btnExportMonthly) btnExportMonthly.addEventListener('click', () => this.exportMonthlyCSV());
 
-    // Teacher Student Photo Upload & Form
     this.bindStudentFormEvents();
 
-    // Copy Code Handler
     const btnCopyCode = document.getElementById('btn-copy-code');
     if (btnCopyCode) {
       btnCopyCode.addEventListener('click', () => {
@@ -359,7 +363,6 @@ class BioPulseApp {
       });
     }
 
-    // Test Pi Ping Button
     const btnTestPing = document.getElementById('btn-test-pi-ping');
     if (btnTestPing) {
       btnTestPing.addEventListener('click', () => {
@@ -380,7 +383,7 @@ class BioPulseApp {
     const uploadBtn = document.getElementById('btn-upload-trigger');
     const webcamBtn = document.getElementById('btn-webcam-snap');
 
-    let currentPhotoBase64 = photoPreview.src;
+    let currentPhotoBase64 = photoPreview ? photoPreview.src : '';
 
     if (uploadBtn && photoInput) {
       uploadBtn.addEventListener('click', () => photoInput.click());
@@ -397,7 +400,7 @@ class BioPulseApp {
           const reader = new FileReader();
           reader.onload = (event) => {
             currentPhotoBase64 = event.target.result;
-            photoPreview.src = currentPhotoBase64;
+            if (photoPreview) photoPreview.src = currentPhotoBase64;
           };
           reader.readAsDataURL(file);
         }
@@ -408,11 +411,11 @@ class BioPulseApp {
       webcamBtn.addEventListener('click', () => {
         alert('WebCam Snapshot Simulated! Photo captured from laptop camera.');
         currentPhotoBase64 = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
-        photoPreview.src = currentPhotoBase64;
+        if (photoPreview) photoPreview.src = currentPhotoBase64;
       });
     }
 
-  if (form) {
+    if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -424,16 +427,14 @@ class BioPulseApp {
         const fpId = parseInt(document.getElementById('input-fingerprint-id').value);
         const phone = document.getElementById('input-guardian-phone').value.trim() || '+91 9800000000';
 
-        // 🚀 Save straight to your Neon database via API
         this.saveNewStudentToDatabase(name, roll, dept, section, batch, fpId, phone, currentPhotoBase64);
 
         form.reset();
-        photoPreview.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
+        if (photoPreview) photoPreview.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
       });
     }
   }
 
-  /* Switch active tab view */
   switchTab(tabId) {
     this.currentTab = tabId;
 
@@ -446,7 +447,6 @@ class BioPulseApp {
     });
   }
 
-  /* Live Clock */
   startClock() {
     const clockEl = document.getElementById('live-clock');
     setInterval(() => {
@@ -455,15 +455,12 @@ class BioPulseApp {
     }, 1000);
   }
 
- /* ==========================================================================
-     SIMULATED BIOMETRIC FINGERPRINT SCAN
-     ========================================================================== */
   handleSimulatedScan(targetStudent = null) {
+    if (!this.students || this.students.length === 0) return;
     const student = targetStudent || this.students[Math.floor(Math.random() * this.students.length)];
     const period = this.activePeriod;
 
     this.triggerScanAnimation(() => {
-      // Mark attendance for current period
       if (!this.attendanceDB[this.selectedDate]) this.attendanceDB[this.selectedDate] = {};
       if (!this.attendanceDB[this.selectedDate][student.id]) {
         const p = {};
@@ -474,19 +471,11 @@ class BioPulseApp {
       this.attendanceDB[this.selectedDate][student.id][period] = 'P';
       this.saveAttendanceToStorage();
 
-      // 🚀 NEW: Send this successful scan directly to your Neon PostgreSQL Database!
       saveAttendanceToDatabase(student.name, student.roll);
 
-      // Play Audio Feedback
       this.playBeep('success');
-
-      // Update Verification Card Display
       this.renderVerificationResult(student, period, true);
-
-      // Append to Live Feed
       this.appendFeedEntry(student, period);
-
-      // Refresh Tables & Absences
       this.renderDailyMatrix();
       this.checkConsecutiveAbsences();
     });
@@ -496,9 +485,10 @@ class BioPulseApp {
     const container = document.getElementById('verification-body');
     const timeStr = new Date().toLocaleTimeString();
 
-    document.getElementById('scan-timestamp').textContent = timeStr;
+    const timestampEl = document.getElementById('scan-timestamp');
+    if (timestampEl) timestampEl.textContent = timeStr;
 
-    if (isMatch) {
+    if (isMatch && container) {
       container.innerHTML = `
         <div class="student-result-card">
           <img src="${student.photo}" alt="${student.name}" class="result-photo">
@@ -516,6 +506,7 @@ class BioPulseApp {
 
   appendFeedEntry(student, period) {
     const feedList = document.getElementById('terminal-feed-list');
+    if (!feedList) return;
     const timeStr = new Date().toLocaleTimeString();
 
     const entry = document.createElement('div');
@@ -537,12 +528,9 @@ class BioPulseApp {
     feedList.insertBefore(entry, feedList.firstChild);
 
     const countBadge = document.getElementById('feed-count-badge');
-    countBadge.textContent = `${feedList.children.length} Scans`;
+    if (countBadge) countBadge.textContent = `${feedList.children.length} Scans`;
   }
 
-  /* ==========================================================================
-     CONSECUTIVE ABSENCE ALGORITHM (3+ DAY CONTINUOUS DETECTOR)
-     ========================================================================== */
   checkConsecutiveAbsences() {
     const dates = Object.keys(this.attendanceDB).sort();
     if (dates.length < 3) return [];
@@ -553,7 +541,6 @@ class BioPulseApp {
       let consecutiveCount = 0;
       const missedDates = [];
 
-      // Scan backwards from most recent recorded date
       for (let i = dates.length - 1; i >= 0; i--) {
         const dStr = dates[i];
         const sRec = this.attendanceDB[dStr] ? this.attendanceDB[dStr][student.id] : null;
@@ -564,12 +551,10 @@ class BioPulseApp {
             if (sRec[p] === 'A') absCount++;
           }
 
-          // If absent for 6 or more periods on this date
           if (absCount >= 6) {
             consecutiveCount++;
             missedDates.unshift(dStr);
           } else {
-            // Streak broken
             break;
           }
         } else {
@@ -577,7 +562,6 @@ class BioPulseApp {
         }
       }
 
-      // Flag if absent for 3 or more consecutive days
       if (consecutiveCount >= 3) {
         flagged.push({
           student: student,
@@ -587,22 +571,23 @@ class BioPulseApp {
       }
     });
 
-    // Update Top Banner & Stat Bar
     const banner = document.getElementById('consecutive-absence-banner');
     const bannerText = document.getElementById('banner-absence-names');
     const navBadge = document.getElementById('nav-absence-badge');
     const statFlagged = document.getElementById('stat-flagged-students');
 
-    if (flagged.length > 0) {
-      banner.classList.remove('hidden');
-      const namesList = flagged.map(f => `<strong>${f.student.name} (${f.daysAbsent} Days)</strong>`).join(', ');
-      bannerText.innerHTML = `${flagged.length} Student(s) [ ${namesList} ] absent for 3+ consecutive days!`;
-      if (navBadge) navBadge.textContent = flagged.length;
-      if (statFlagged) statFlagged.textContent = `${flagged.length} Alert`;
-    } else {
-      banner.classList.add('hidden');
-      if (navBadge) navBadge.textContent = '0';
-      if (statFlagged) statFlagged.textContent = '0 Clean';
+    if (banner && bannerText) {
+      if (flagged.length > 0) {
+        banner.classList.remove('hidden');
+        const namesList = flagged.map(f => `<strong>${f.student.name} (${f.daysAbsent} Days)</strong>`).join(', ');
+        bannerText.innerHTML = `${flagged.length} Student(s) [ ${namesList} ] absent for 3+ consecutive days!`;
+        if (navBadge) navBadge.textContent = flagged.length;
+        if (statFlagged) statFlagged.textContent = `${flagged.length} Alert`;
+      } else {
+        banner.classList.add('hidden');
+        if (navBadge) navBadge.textContent = '0';
+        if (statFlagged) statFlagged.textContent = '0 Clean';
+      }
     }
 
     this.renderConsecutiveAbsenceCards(flagged);
@@ -614,7 +599,7 @@ class BioPulseApp {
     const totalBadge = document.getElementById('total-flagged-count');
     if (!container) return;
 
-    totalBadge.textContent = `${flaggedList.length} Students Flagged`;
+    if (totalBadge) totalBadge.textContent = `${flaggedList.length} Students Flagged`;
 
     if (flaggedList.length === 0) {
       container.innerHTML = `
@@ -646,7 +631,7 @@ class BioPulseApp {
         </div>
 
         <div class="flagged-actions">
-          <button class="btn btn-warning btn-sm w-100" onclick="alert('SMS Warning dispatched to Guardian of ${item.student.name} (${item.student.phone})! Notice: Student has been absent for ${item.daysAbsent} consecutive days.')">
+          <button class="btn btn-warning btn-sm w-100" onclick="alert('SMS Warning dispatched to Guardian of ${item.student.name} (${item.student.phone})!')">
             <i class="fa-solid fa-paper-plane"></i> Notify Parent (SMS)
           </button>
           <button class="btn btn-outline btn-sm" onclick="alert('Marked as Excused Medical Leave for ${item.student.name}.')">
@@ -657,15 +642,14 @@ class BioPulseApp {
     `).join('');
   }
 
-  /* ==========================================================================
-     RENDER 8-PERIOD DAILY MATRIX TABLE
-     ========================================================================== */
   renderDailyMatrix() {
     const tbody = document.getElementById('daily-matrix-tbody');
     if (!tbody) return;
 
-    const deptFilter = document.getElementById('filter-dept').value;
-    const searchVal = document.getElementById('search-student-daily').value.toLowerCase().trim();
+    const deptFilterEl = document.getElementById('filter-dept');
+    const searchDailyEl = document.getElementById('search-student-daily');
+    const deptFilter = deptFilterEl ? deptFilterEl.value : 'ALL';
+    const searchVal = searchDailyEl ? searchDailyEl.value.toLowerCase().trim() : '';
     const dateRecords = this.attendanceDB[this.selectedDate] || {};
 
     const flaggedList = this.checkConsecutiveAbsences();
@@ -754,16 +738,12 @@ class BioPulseApp {
     this.checkConsecutiveAbsences();
   }
 
-  /* ==========================================================================
-     RENDER MONTHLY ATTENDANCE LOGS
-     ========================================================================== */
   renderMonthlyLogs() {
     const tbody = document.getElementById('monthly-logs-tbody');
     if (!tbody) return;
 
-    const searchVal = document.getElementById('search-student-monthly').value.toLowerCase().trim();
-
-    // Total periods in month = 20 working days * 8 periods = 160 periods
+    const searchMonthlyEl = document.getElementById('search-student-monthly');
+    const searchVal = searchMonthlyEl ? searchMonthlyEl.value.toLowerCase().trim() : '';
     const totalMonthlyPeriods = 160;
 
     let filtered = this.students.filter(s => {
@@ -771,7 +751,6 @@ class BioPulseApp {
     });
 
     tbody.innerHTML = filtered.map(student => {
-      // Calculate total present periods across all dates in DB
       let periodsPresent = 0;
       let daysLogged = 0;
 
@@ -785,7 +764,6 @@ class BioPulseApp {
         }
       });
 
-      // Scale to full month for display
       const totalAttendedScale = Math.min(totalMonthlyPeriods, Math.round(periodsPresent * 4.5));
       const percentage = Math.min(100, Math.round((totalAttendedScale / totalMonthlyPeriods) * 100));
       const periodsAbsent = totalMonthlyPeriods - totalAttendedScale;
@@ -828,13 +806,16 @@ class BioPulseApp {
     const student = this.students.find(s => s.id === studentId);
     if (!student) return;
 
-    document.getElementById('modal-student-name-title').innerHTML = `
-      <i class="fa-solid fa-user text-cyan"></i> Monthly Calendar: <strong>${student.name}</strong> (${student.roll})
-    `;
+    const titleEl = document.getElementById('modal-student-name-title');
+    if (titleEl) {
+      titleEl.innerHTML = `
+        <i class="fa-solid fa-user text-cyan"></i> Monthly Calendar: <strong>${student.name}</strong> (${student.roll})
+      `;
+    }
 
     const body = document.getElementById('modal-monthly-calendar-body');
+    if (!body) return;
 
-    // Build 30-day calendar matrix
     let daysHTML = '';
     for (let day = 1; day <= 30; day++) {
       const isPresentDay = day % 7 !== 0 && day % 6 !== 0;
@@ -860,14 +841,14 @@ class BioPulseApp {
     `;
 
     const modal = document.getElementById('modal-monthly-detail');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 
-    document.getElementById('btn-close-monthly-modal').onclick = () => modal.classList.add('hidden');
+    const closeBtn = document.getElementById('btn-close-monthly-modal');
+    if (closeBtn && modal) {
+      closeBtn.onclick = () => modal.classList.add('hidden');
+    }
   }
 
-  /* ==========================================================================
-     RENDER STUDENT DIRECTORY & QUICK SELECTOR
-     ========================================================================== */
   renderStudentDirectory() {
     const container = document.getElementById('student-directory-list');
     const quickSelect = document.getElementById('select-quick-student');
@@ -878,28 +859,25 @@ class BioPulseApp {
       `).join('');
     }
 
-    if (!container) return;
-
-    container.innerHTML = this.students.map(s => `
-      <div class="roster-card">
-        <img src="${s.photo}" alt="${s.name}" class="roster-avatar">
-        <div class="roster-info">
-          <div class="roster-name">${s.name}</div>
-          <div class="roster-sub">${s.roll} • ${s.dept} (${s.section || 'Sec-A'})</div>
-          <span class="roster-sensor-id"><i class="fa-solid fa-fingerprint"></i> Biometric Template ID #${s.fingerprintId}</span>
+    if (container) {
+      container.innerHTML = this.students.map(s => `
+        <div class="roster-card">
+          <img src="${s.photo}" alt="${s.name}" class="roster-avatar">
+          <div class="roster-info">
+            <div class="roster-name">${s.name}</div>
+            <div class="roster-sub">${s.roll} • ${s.dept} (${s.section || 'Sec-A'})</div>
+            <span class="roster-sensor-id"><i class="fa-solid fa-fingerprint"></i> Biometric Template ID #${s.fingerprintId}</span>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
 
-    document.getElementById('stat-total-students').textContent = this.students.length;
+    const totalStudentsEl = document.getElementById('stat-total-students');
+    if (totalStudentsEl) totalStudentsEl.textContent = this.students.length;
   }
 
-  /* ==========================================================================
-     CSV EXPORTERS
-     ========================================================================== */
   exportDailyCSV() {
     let csv = `Student Name,Roll Number,Department,Period 1,Period 2,Period 3,Period 4,Period 5,Period 6,Period 7,Period 8,Total Present\n`;
-
     const dateRecords = this.attendanceDB[this.selectedDate] || {};
 
     this.students.forEach(s => {
@@ -956,7 +934,6 @@ class BioPulseApp {
     }
   }
 
-  /* Render Everything */
   renderAll() {
     this.renderDailyMatrix();
     this.renderMonthlyLogs();
@@ -970,7 +947,8 @@ let app;
 document.addEventListener('DOMContentLoaded', () => {
   app = new BioPulseApp();
 });
-// Function to send student data to our new Vercel API
+
+// Standalone helper for scan logs API
 async function saveAttendanceToDatabase(studentName, rollNumber) {
     try {
         const response = await fetch('/api/addStudent', {
@@ -988,36 +966,10 @@ async function saveAttendanceToDatabase(studentName, rollNumber) {
         
         if (data.success) {
             console.log("Success:", data.message);
-            alert(`${studentName} has been marked present in the database!`);
         } else {
             console.error("Error from server:", data.message);
-            alert("Could not save attendance. Check console.");
         }
     } catch (error) {
         console.error("Network error:", error);
-        alert("Failed to reach the database API.");
     }
 }
-async saveNewStudentToDatabase(name, roll, dept, section, batch, fpId, phone, photo) {
-    try {
-      const response = await fetch('/api/addStudent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, roll_number: roll })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        alert(`✅ Student ${name} (Roll: ${roll}) registered successfully in the database!`);
-        this.loadStudentsFromDatabase(); // Refresh the list live from Neon
-      } else {
-        alert("Could not save student to database. Check console.");
-      }
-    } catch (error) {
-      console.error("Network error:", error);
-      alert("Failed to reach the database API.");
-    }
-  }
-
-// Example of how to use it (you would link this to your button click):
-// saveAttendanceToDatabase("Rahul Sharma", "CS-101");
