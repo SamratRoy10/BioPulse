@@ -81,7 +81,7 @@ class BioPulseApp {
       const response = await fetch('/api/addStudent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, roll_number: roll })
+        body: JSON.stringify({ name: name, roll_number: roll, photo: photo })
       });
       
       const data = await response.json();
