@@ -976,23 +976,21 @@ document.addEventListener('DOMContentLoaded', () => {
 // Standalone helper for scan logs API
 async function saveAttendanceToDatabase(studentName, rollNumber) {
     try {
-        const response = await fetch('/api/markAttendance', { // <--- CHANGED!
+        const response = await fetch('/api/markAttendance', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-                name: studentName, 
                 roll_number: rollNumber 
             }),
         });
 
         const data = await response.json();
-        
         if (data.success) {
-            console.log("Success:", data.message);
+            console.log("Attendance logged successfully!");
         } else {
-            console.error("Error from server:", data.message);
+            console.error("Error logging attendance:", data.message);
         }
     } catch (error) {
         console.error("Network error:", error);
