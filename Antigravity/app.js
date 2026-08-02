@@ -479,8 +479,16 @@ class BioPulseApp {
     }, 1000);
   }
 
-  handleSimulatedScan(targetStudent = null) {
-    if (!this.students || this.students.length === 0) return;
+ handleSimulatedScan(targetStudent = null) {
+    // 🛡️ LOCK: Prevent multiple rapid scans from multiplying requests
+    if (this.isProcessingScan) return;
+    this.isProcessingScan = true;
+
+    if (!this.students || this.students.length === 0) {
+      this.isProcessingScan = false;
+      return;
+    }
+    
     const student = targetStudent || this.students[Math.floor(Math.random() * this.students.length)];
     const period = this.activePeriod;
 
@@ -495,7 +503,10 @@ class BioPulseApp {
       this.attendanceDB[this.selectedDate][student.id][period] = 'P';
       this.saveAttendanceToStorage();
 
-      saveAttendanceToDatabase(student.name, student.roll);
+      // Send to backend only once safely
+      saveAttendanceToDatabase(student.name, student.roll).then(() => {
+        this.isProcessingScan = false; // Release lock after completion
+      });
 
       this.playBeep('success');
       this.renderVerificationResult(student, period, true);
@@ -504,7 +515,6 @@ class BioPulseApp {
       this.checkConsecutiveAbsences();
     });
   }
-
   renderVerificationResult(student, period, isMatch = true) {
     const container = document.getElementById('verification-body');
     const timeStr = new Date().toLocaleTimeString();
