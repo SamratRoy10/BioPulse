@@ -41,32 +41,28 @@ class BioPulseApp {
         }
       });
       
-      // 1. Check if the API endpoint actually exists
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}. Make sure getStudents.js is deployed!`);
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
 
-      const textData = await response.text();
-      console.log("Raw response from Neon/Vercel:", textData);
-      
-      // 2. Try to parse it as JSON
-      const dbStudents = JSON.parse(textData);
+      const dbStudents = await response.json();
       
       if (Array.isArray(dbStudents) && dbStudents.length > 0) {
         this.students = dbStudents.map((s, index) => ({
-          id: 'STD' + String(index + 1).padStart(3, '0'),
-          name: s.name || s.student_name || "Unknown Name", // Fallback if column names differ
-          roll: s.roll_number || s.roll || "N/A",
-          dept: s.dept || 'Computer Science',
-          section: s.section || 'Sec-A',
-          batch: s.batch || '2024-2028',
+          id: 'STD' + String(s.id || index + 1).padStart(3, '0'),
+          name: s.name || "Unknown Name",
+          roll: s.roll_number || "N/A",
+          dept: 'Computer Science',
+          section: 'Sec-A',
+          batch: '2024-2028',
           fingerprintId: s.id || index + 1,
-          photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+          // Use the real photo saved in Neon, or fall back to default if empty
+          photo: s.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
           phone: '+91 9800000000'
         }));
-        console.log("✅ Successfully mapped database students to UI:", this.students);
+        console.log("✅ Successfully loaded all students from database:", this.students);
       } else {
-        console.log("Database returned an empty array or invalid format.");
+        console.log("Database returned an empty list.");
         this.students = [];
       }
       
