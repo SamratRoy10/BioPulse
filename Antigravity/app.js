@@ -31,7 +31,15 @@ class BioPulseApp {
      ========================================================================== */
   async loadStudentsFromDatabase() {
     try {
-      const response = await fetch('/api/getStudents');
+      // 🚀 Added a timestamp and headers to strictly block browser caching
+      const response = await fetch(`/api/getStudents?timestamp=${new Date().getTime()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
       const dbStudents = await response.json();
       
       if (Array.isArray(dbStudents) && dbStudents.length > 0) {
