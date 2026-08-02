@@ -26,12 +26,13 @@ class BioPulseApp {
     this.startClock();
   }
 
-  /* ==========================================================================
-     FETCH LIVE STUDENTS FROM DATABASE
+ /* ==========================================================================
+     FETCH LIVE STUDENTS FROM DATABASE (DEBUG VERSION)
      ========================================================================== */
   async loadStudentsFromDatabase() {
     try {
-      // 🚀 Added a timestamp and headers to strictly block browser caching
+      console.log("Fetching live students from database...");
+      
       const response = await fetch(`/api/getStudents?timestamp=${new Date().getTime()}`, {
         cache: 'no-store',
         headers: {
@@ -40,31 +41,41 @@ class BioPulseApp {
         }
       });
       
-      const dbStudents = await response.json();
+      // 1. Check if the API endpoint actually exists
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}. Make sure getStudents.js is deployed!`);
+      }
+
+      const textData = await response.text();
+      console.log("Raw response from Neon/Vercel:", textData);
+      
+      // 2. Try to parse it as JSON
+      const dbStudents = JSON.parse(textData);
       
       if (Array.isArray(dbStudents) && dbStudents.length > 0) {
         this.students = dbStudents.map((s, index) => ({
           id: 'STD' + String(index + 1).padStart(3, '0'),
-          name: s.name,
-          roll: s.roll_number,
-          dept: 'Computer Science',
-          section: 'Sec-A',
-          batch: '2024-2028',
-          fingerprintId: s.id,
+          name: s.name || s.student_name || "Unknown Name", // Fallback if column names differ
+          roll: s.roll_number || s.roll || "N/A",
+          dept: s.dept || 'Computer Science',
+          section: s.section || 'Sec-A',
+          batch: s.batch || '2024-2028',
+          fingerprintId: s.id || index + 1,
           photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
           phone: '+91 9800000000'
         }));
+        console.log("✅ Successfully mapped database students to UI:", this.students);
       } else {
+        console.log("Database returned an empty array or invalid format.");
         this.students = [];
       }
+      
       this.renderAll();
     } catch (error) {
-      console.error("Failed to load live students:", error);
-      this.students = [];
+      console.error("❌ Failed to load live students:", error);
       this.renderAll();
     }
   }
-
   async saveNewStudentToDatabase(name, roll, dept, section, batch, fpId, phone, photo) {
     try {
       const response = await fetch('/api/addStudent', {
