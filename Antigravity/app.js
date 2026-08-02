@@ -85,9 +85,14 @@ class BioPulseApp {
       });
       
       const data = await response.json();
-      if (data.success) {
+      if (data.success || response.ok) {
         alert(`✅ Student ${name} (Roll: ${roll}) registered successfully in the database!`);
-        this.loadStudentsFromDatabase(); // Refresh the list live from Neon
+        
+        // 🚀 AWAIT the live refresh so it finishes before you look at it
+        await this.loadStudentsFromDatabase(); 
+        
+        // 🚀 Automatically switch to the directory tab to see the new entry
+        this.switchTab('directory'); 
       } else {
         alert("Could not save student to database. Check console.");
       }
