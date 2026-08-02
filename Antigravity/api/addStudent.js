@@ -6,14 +6,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Now extracting the photo from the frontend request!
     const { name, roll_number, photo } = req.body;
 
     if (!name || !roll_number) {
       return res.status(400).json({ success: false, message: 'Name and Roll Number are required' });
     }
 
-    // 2. Inserting the photo into the new Neon database column
     await sql`
       INSERT INTO students (name, roll_number, photo) 
       VALUES (${name}, ${roll_number}, ${photo || null});
