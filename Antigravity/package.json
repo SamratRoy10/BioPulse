@@ -1,7 +1,8 @@
 {
-  "name": "biopulse-backend",
-  "type": "module",
- "dependencies": {
+  "name": "biopulse",
+  "version": "1.0.0",
+  "description": "Biometric Attendance",
+  "dependencies": {
     "@vercel/postgres": "^0.8.0"
   }
 }
