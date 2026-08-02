@@ -1,7 +1,7 @@
 {
   "name": "biopulse-backend",
   "type": "module",
-  "dependencies": {
-    "@neondatabase/serverless": "latest"
+ "dependencies": {
+    "@vercel/postgres": "^0.8.0"
   }
 }
