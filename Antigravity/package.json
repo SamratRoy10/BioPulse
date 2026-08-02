@@ -1,7 +1,6 @@
 {
   "name": "biopulse",
   "version": "1.0.0",
-  "description": "Biometric Attendance",
   "dependencies": {
     "@vercel/postgres": "^0.8.0"
   }
