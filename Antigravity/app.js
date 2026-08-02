@@ -973,9 +973,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Standalone helper for scan logs API
+// Standalone helper for scan logs API
 async function saveAttendanceToDatabase(studentName, rollNumber) {
     try {
-        const response = await fetch('/api/addStudent', {
+        const response = await fetch('/api/markAttendance', { // <--- CHANGED!
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
